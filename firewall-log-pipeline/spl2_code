@@ -1,0 +1,18 @@
+from datamodels."Firewall_Traffic"
+| where action = "allowed" AND bytes > 1000
+| dedup src_ip, dest_ip, app
+| stats count as event_count, sum(bytes) as total_bytes by src_ip, dest_ip, app, rule_name
+| eval severity=if(total_bytes > 1000000, "High", "Normal")
+| mcollect index="firewall_metrics" marker="fw_data"
+
+
+
+# You can use this SPL query to set an alert:
+
+spl
+Copy
+Edit
+| from metrics."firewall_metrics"
+| where severity="High"
+| stats sum(total_bytes) as high_volume_traffic by src_ip, dest_ip
+Set this up as a real-time alert in Splunk Web with a custom threshold.
